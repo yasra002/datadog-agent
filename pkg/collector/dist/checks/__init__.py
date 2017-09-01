@@ -11,7 +11,10 @@ import time
 import logging
 from collections import defaultdict
 
-import aggregator
+try:
+    import aggregator
+except:
+    pass
 try:
     import datadog_agent
 except:
