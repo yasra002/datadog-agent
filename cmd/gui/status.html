@@ -144,125 +144,71 @@
 
           <!-- Collector -->
           <h2>Collector</h2>
-
           <dl>
-            <dt>Status date</dt>      <dd>{{ collector['status_date'] }}</dd>
-            <dt>Pid</dt>              <dd>{{ collector['pid'] }}</dd>
-            <dt>Path to conf.d</dt>      <dd>{{ collector['confd_path'] }}</dd>
-            <dt>Path to checks.d</dt>    <dd>{{ collector['checksd_path'] }}</dd>
+            <dt>Path to conf.d</dt>      <dd>{{ config['confd_path'] }}</dd>
+            <dt>Path to checks.d</dt>    <dd>{{ config['additional_checksd'] }}</dd>
           </dl>
 
           <h3>Clocks</h3>
 
           <dl>
-              <dt>NTP offset:</dt>          <dd><span class="{{ ['status-ok','status-error'][collector['ntp_warning']] }}">{{ collector['ntp_offset'] }}</span></dd>
-            <dt>System UTC time:</dt>     <dd>{{ collector['utc_time'] }}</dd>
+            <dt>NTP offset:</dt>          <dd>{{ root_status['ntpOffset'] }}</span></dd>
+            <dt>System UTC time:</dt>     <dd>{{ root_status['time'] }}</dd>
           </dl>
 
           <h3>Hostnames</h3>
-
-          {% if collector['hostnames'] %}
+          
+          {% if meta_data['meta'] %}
           <dl>
-            {% for key, host in collector['hostnames'].iteritems() %}
-            <dt>{{ key }}</dt>      <dd>{{ host }}</dd>
+            <dt>internalHostname:</dt>      <dd>{{ meta_data['internalHostname'] }}</dd>
+            <dt>hostname:</dt>      <dd>{{ meta_data['meta']['hostname'] }}</dd>
+            <dt>socket-fqdn:</dt>   <dd>{{ meta_data['meta']['socket-fqdn'] }}</dd>
+            {% if meta_data['meta']['ec2-hostname'] %}
+              <dt>ec2-hostname:</dt>      <dd>{{ meta_data['meta']['ec2-hostname'] }}</dd>
+            {% end %}
+            {% if meta_data['meta']['host_aliases'] %}
+              {% for host in  meta_data['meta']['host_aliases'].iteritems() %}
+              <dt>alias:</dt>      <dd>{{ host }}</dd>
+              {% end %}
             {% end %}
           </dl>
           {% else %}
-          <p>No host information available yet.</p>
+          <p>No host metadata available yet.</p>
           {% end %}
 
           <h3>Checks</h3>
 
-          {% if collector['checks'] %}
-          <ul id="checks" style ="list-style-type: None; padding-left: 0;">
-            {% for name, check in collector['checks'].iteritems() %}
-            <li><h4>{{ name }} ({{ check.get('check_version') }})</h4>
-            <ul>
-            {% if check['init_failed'] %}
-              <li>Initialization error: {{check['traceback']}}</li></ul>
-            {% else %}
-            {% for id, instance in check['instances'].iteritems() %}
-            <li>
-              <dl>
-                <dt>Instance #{{ id }}</dt> <dd class="{{ ['status-ok','status-warning','status-error', 'status-error'][2 * instance['has_error'] + 1 * instance['has_warnings']] }}">{{ instance['status'] }}</dd>
-                {% if instance['has_error'] %}
-                <dt>Error</dt> <dd>{{ instance['error'] }}</dd>
+          {% if runner_stats %}
+            {% if runner_stats['Checks'] %}
+              <ul id="checks" style ="list-style-type: None; padding-left: 0;">
+              {% for id, instance in runner_stats['Checks'].iteritems() %}
+              <li><h4>{{ runner_stats['Checks'][id]['CheckName'] }} </h4>
+                <dl>
+                {% if runner_stats['Checks'][id]['LastError'] %}
+                  <dt>Error</dt> <dd class='status-error'>{{ runner_stats['Checks'][id]['LastError'] }}</dd>
                 {% end %}
-                {% if instance['has_warnings'] %}
-                <dt>Warnings</dt>
-                <dd>
-                  {% if len(instance['warnings']) > 1 %}
-                  <br/>
+                {% if runner_stats['Checks'][id]['LastWarnings'] %}
+                  <dt>Warnings</dt>
+                  {% for warning in instance['LastWarnings'] %}
+                    <dd class='status-warning'>{{ warning }}</dd>
                   {% end %}
-                  {% for warning in instance['warnings'] %}
-                  {{warning}}<br />
-                  {% end %}
-                </dd>
                 {% end %}
-              </dl>
-            </li>
-            {% end %}
-            <li>Collected {{ check['metric_count'] }} metrics, {{ check['event_count'] }} events and {{ check['service_check_count'] }} service check</li>
-            </ul></li>
-            {% end %}
-          {% end %}
-          </ul>
-          {% else %}
-          <p>No checks have run yet.</p>
-          {% end %}
 
-          <h3>Emitter</h3>
-
-          {% if collector['emitter'] %}
-          <dl>
-            {% for status in collector['emitter'] %}
-            <dt>{{ status['name'] }}</dt>
-            <dd>
-              <span class="{{ ['status-ok','status-error'][status['has_error']] }}">{{ status['status'] }}</span>
-              {% if status['has_error'] %}
-              <br />Error: {{ status['error'] }}
+                </dl>
               {% end %}
-            </dd>
-            {% end %}
-          </dl>
-          {% else %}
-          <p>No emitters have run yet.</p>
-          {% end %}
-
-
-          <!-- Forwarder -->
-          <h2>Forwarder</h2>
-
+              </ul>
+            {% end %} <!-- if runner_stats[checks] -->  
+          {% end %} <!-- if runner_stats -->
+        <!-- Forwarder -->
+        <h2>Forwarder</h2>
+        
           <dl>
-            <dt>Status date</dt>      <dd>{{ forwarder['status_date'] }}</dd>
-            <dt>Pid</dt>              <dd>{{ forwarder['pid'] }}</dd>
+            <dt>CheckRunsV1</dt>   <dd>{{ root_status['forwarderStats']['TransactionsCreated']['CheckRunsV1'] }}</dd>
+            <dt>IntakeV1</dt>      <dd>{{ root_status['forwarderStats']['TransactionsCreated']['IntakeV1'] }}</dd>
+            <dt>RetryQueueSize</dt><dd>{{ root_status['forwarderStats']['TransactionsCreated']['RetryQueueSize'] }}</dd>
+            <dt>Success</dt>       <dd>{{ root_status['forwarderStats']['TransactionsCreated']['Success'] }}</dd>
+            <dt>TimeseriesV1</dt>  <dd>{{ root_status['forwarderStats']['TransactionsCreated']['TimeseriesV1'] }}</dd>
           </dl>
-
-          <dl>
-            <dt>Flush count</dt>        <dd>{{ forwarder['flush_count'] }}</dd>
-            <dt>Queue size</dt>         <dd>{{ forwarder['queue_size'] }} bytes</dd>
-            <dt>Queue length</dt>       <dd>{{ forwarder['queue_length'] }}</dd>
-            <dt>Transactions received</dt> <dd>{{ forwarder['transactions_received'] }}</dd>
-            <dt>Transactions flushed</dt> <dd>{{ forwarder['transactions_flushed'] }}</dd>
-            <dt>Transactions rejected</dt>       <dd>{{ forwarder['transactions_rejected'] }}</dd>
-          </dl>
-
-          <!-- Dogstatsd -->
-          <h2>DogstatsD</h2>
-
-          <dl>
-            <dt>Status date</dt>      <dd>{{ dogstatsd['status_date'] }}</dd>
-            <dt>Pid</dt>              <dd>{{ dogstatsd['pid'] }}</dd>
-          </dl>
-
-          <dl>
-            <dt>Flush count</dt>        <dd>{{ dogstatsd['flush_count'] }}</dd>
-            <dt>Packet count</dt>       <dd>{{ dogstatsd['packet_count'] }}</dd>
-            <dt>Packets per second</dt> <dd>{{ dogstatsd['packets_per_second'] }}</dd>
-            <dt>Metric count</dt>       <dd>{{ dogstatsd['metric_count'] }}</dd>
-            <dt>Event count</dt>        <dd>{{ dogstatsd['event_count'] }}</dd>
-          </dl>
-
         </div>
 
         <h4 id="by">Powered by <a href="http://www.datadoghq.com/">Datadog</a></h4>
@@ -271,3 +217,4 @@
     </div><!-- #container -->
   </body>
 </html>
+

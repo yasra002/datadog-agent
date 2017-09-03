@@ -20,6 +20,7 @@ from subprocess import (
 import sys
 import thread  # To manage the windows process asynchronously
 import warnings
+from status import bysession
 
 # 3p
 # GUI Imports
@@ -40,11 +41,15 @@ with warnings.catch_warnings():
     )
     from guidata.qt.QtGui import (
         QApplication,
+        QPushButton,
+        QDialog,
         QFont,
+        QFormLayout,
         QGroupBox,
         QHBoxLayout,
         QInputDialog,
         QLabel,
+        QLineEdit,
         QListWidget,
         QMenu,
         QMessageBox,
@@ -403,22 +408,36 @@ class HTMLWindow(QTextEdit):
     def latest_status(self):
         try:
             loaded_template = template.Loader(".")
-            dogstatsd_status = DogstatsdStatus.load_latest_status()
-            forwarder_status = ForwarderStatus.load_latest_status()
-            collector_status = CollectorStatus.load_latest_status()
-            generated_template = loaded_template.load("status.html").generate(
-                port=22,
-                platform=platform.platform(),
-                agent_version=get_version(),
-                python_version=platform.python_version(),
-                python_architecture=Platform.python_architecture(),
-                logger_info=logger_info(),
-                dogstatsd=dogstatsd_status.to_dict(),
-                forwarder=forwarder_status.to_dict(),
-                collector=collector_status.to_dict(),
-            )
+            jsonstatus = bysession()
+            #dogstatsd_status = DogstatsdStatus.load_latest_status()
+            #forwarder_status = ForwarderStatus.load_latest_status()
+            #collector_status = CollectorStatus.load_latest_status()
+            config = jsonstatus.get("config")
+            meta_data = jsonstatus.get("metadata")
+            runner_stats = jsonstatus.get("runnerStats")
+            #config = config.get("config")
+            try:
+                generated_template = loaded_template.load("status.html").generate(
+                    port=22,
+                    platform=platform.platform(),
+                    agent_version=get_version(),
+                    python_version=platform.python_version(),
+                    python_architecture=Platform.python_architecture(),
+                    logger_info=logger_info(),
+                    #dogstatsd=dogstatsd_status.to_dict(),
+                    #forwarder=forwarder_status.to_dict(),
+                    #collector=collector_status.to_dict(),
+                    root_status = jsonstatus,
+                    config = config,
+                    meta_data = meta_data,
+                    runner_stats = runner_stats
+                )
+            except Exception as e:
+                print "inner exception %s" % str(e)
+                return ("Unable to fetch latest status")
             return generated_template
-        except Exception:
+        except Exception as e:
+            print "exception %s" % str(e)
             return ("Unable to fetch latest status")
 
 
@@ -761,36 +780,70 @@ def agent_manager(action, async=True):
 
 
 def windows_flare():
-    case_id, ok = QInputDialog.getInteger(
-        None, "Flare",
-        "Your logs and configuration files are going to be collected and "
-        "sent to Datadog Support. Please enter your ticket number if you have one:",
-        value=0, min=0
-    )
-    if not ok:
-        info_popup("Flare cancelled")
-        return
-    case_id = int(case_id) if case_id != 0 else None
-    f = Flare(case_id=case_id)
-    f.collect()
-    email, ok = QInputDialog.getText(
-        None, "Your email",
-        "Logs and configuration files have been collected."
-        " Please enter your email address:"
-    )
-    if not ok:
-        info_popup("Flare cancelled. You can still use {0}".format(f.tar_path))
-        return
-    try:
-        case_id = f.upload(email=str(email))
-        info_popup("Your logs were successfully uploaded. For future reference,"
-                   " your internal case id is {0}".format(case_id))
-    except Exception as e:
-        warning_popup('The upload failed. Please send the following file by email'
-                      ' to support: {0}\n\n{1}'.format(f.tar_path, str(e)))
-    finally:
-        return
+    class flare_input_dialog(QDialog):
+        def __init__(self, parent = None):
+            super(flare_input_dialog, self).__init__(parent)
+            self._entered_email = ""
+            self._entered_case = ""
 
+            self._layout = QFormLayout(self)
+            supportid = QLabel("Your logs and configuration files are going to be collected and "
+        "sent to Datadog Support. Please enter your ticket number if you have one:") 
+            self._layout.addRow(supportid)
+
+            self._caseentry = QLineEdit()
+            self._layout.addRow(self._caseentry)
+
+            emaillabel = QLabel("Please provide your email address:")
+            self._layout.addRow(emaillabel)
+
+            self._email = QLineEdit()
+            self._email.textChanged.connect(self.onEmailChanged)
+            self._layout.addRow(self._email)
+
+            self._okbutton = QPushButton("OK")
+            self._okbutton.setFixedWidth(80)
+            self._okbutton.clicked.connect(self.onOk)
+            self._cancelbutton = QPushButton("Cancel")
+            self._cancelbutton.setFixedWidth(80)
+            self._cancelbutton.clicked.connect(self.onCancel)
+
+            self._layout.addRow(self._okbutton, self._cancelbutton)
+            self._okbutton.setEnabled(False)
+        
+        def onEmailChanged(self, string):
+            email = self._email.text()
+            if len(email) > 0:
+                self._okbutton.setEnabled(True)
+            else:
+                self._okbutton.setEnabled(False)
+
+        def onOk(self):
+            self._entered_email = self._email.text()
+            self._entered_case = self._caseentry.text()
+            self.accept()
+            pass
+        
+        def onCancel(self):
+            self.reject()
+
+
+    fid = flare_input_dialog()
+    fid.show()
+    dialog_return = fid.exec_()
+    if QDialog.Accepted == dialog_return:
+        try:
+            cmd_base = "..\\..\\bin\\agent\\agent.exe flare -s"
+            if len(fid._entered_case) != 0:
+                cmd_base += " -c %s" % fid._entered_case
+            if len(fid._entered_email) != 0:
+                cmd_base += " -e %s" % fid._entered_email
+
+            check_call(cmd_base)
+        except Exception as e:
+            warning_popup('The flare failed')
+    else:
+        info_popup("Flare cancelled")
 
 def warning_popup(message, parent=None):
     QMessageBox.warning(parent, 'Message', message, QMessageBox.Ok)
