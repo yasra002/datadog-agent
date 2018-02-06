@@ -1,7 +1,7 @@
 stages:
-  - source_test
+  # - source_test
   - binary_build
-  - integration_test
+  # - integration_test
   - package_build
   - testkitchen_deploy
   - testkitchen_testing
@@ -48,21 +48,21 @@ before_script:
 #
 
 
-# run tests for deb-x64
-run_tests_deb-x64:
-  stage: source_test
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/datadog-agent-builders/deb_x64:latest
-  tags: [ "runner:main", "size:large" ]
-  script:
-    - inv -e test --race --profile
+# # run tests for deb-x64
+# run_tests_deb-x64:
+#   stage: source_test
+#   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/datadog-agent-builders/deb_x64:latest
+#   tags: [ "runner:main", "size:large" ]
+#   script:
+#     - inv -e test --race --profile
 
-# run tests for rpm-x64
-run_test_rpm-x64:
-  stage: source_test
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/datadog-agent-builders/rpm_x64:latest
-  tags: [ "runner:main", "size:large" ]
-  script:
-    - inv -e test --race --profile
+# # run tests for rpm-x64
+# run_test_rpm-x64:
+#   stage: source_test
+#   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/datadog-agent-builders/rpm_x64:latest
+#   tags: [ "runner:main", "size:large" ]
+#   script:
+#     - inv -e test --race --profile
 
 
 #
@@ -124,16 +124,16 @@ build_dogstatsd-deb_x64:
 #       - benchmarks
 
 # check the size of the static dogstatsd binary
-run_dogstatsd_size_test:
-  stage: integration_test
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/datadog-agent-builders/deb_x64:latest
-  tags: [ "runner:main", "size:large" ]
-  before_script:
-    # Disable global before_script
-    - mkdir -p $STATIC_BINARIES_DIR
-    - $S3_CP_CMD $S3_ARTEFACTS_URI/static/dogstatsd $STATIC_BINARIES_DIR/dogstatsd
-  script:
-    - inv -e dogstatsd.size-test --skip-build
+# run_dogstatsd_size_test:
+#   stage: integration_test
+#   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/datadog-agent-builders/deb_x64:latest
+#   tags: [ "runner:main", "size:large" ]
+#   before_script:
+#     # Disable global before_script
+#     - mkdir -p $STATIC_BINARIES_DIR
+#     - $S3_CP_CMD $S3_ARTEFACTS_URI/static/dogstatsd $STATIC_BINARIES_DIR/dogstatsd
+#   script:
+#     - inv -e dogstatsd.size-test --skip-build
 
 #
 # package_build
@@ -616,9 +616,6 @@ deploy_deb:
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/datadog-agent-builders/deploy:latest
   before_script:
     - ls $OMNIBUS_PACKAGE_DIR
-  only:
-    - master
-    - tags
   tags: [ "runner:main", "size:large" ]
   script:
     - source /usr/local/rvm/scripts/rvm
@@ -653,9 +650,6 @@ deploy_rpm:
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/datadog-agent-builders/deploy:latest
   before_script:
     - ls $OMNIBUS_PACKAGE_DIR
-  only:
-    - master
-    - tags
   tags: [ "runner:main", "size:large" ]
   script:
     - source /usr/local/rvm/scripts/rvm
@@ -682,9 +676,6 @@ deploy_suse_rpm:
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/datadog-agent-builders/deploy:latest
   before_script:
     - ls $OMNIBUS_PACKAGE_DIR_SUSE
-  only:
-    - master
-    - tags
   tags: [ "runner:main", "size:large" ]
   script:
     - source /usr/local/rvm/scripts/rvm
