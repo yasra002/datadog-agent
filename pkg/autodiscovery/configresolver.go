@@ -14,6 +14,8 @@ import (
 	"sync"
 	"unicode"
 
+	"github.com/DataDog/datadog-agent/pkg/tagger"
+	"github.com/DataDog/datadog-agent/pkg/util/docker"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
@@ -187,6 +189,11 @@ func (cr *ConfigResolver) resolve(tpl integration.Config, svc listeners.Service)
 	cr.ac.loadedConfigs[resolvedConfig.Digest()] = resolvedConfig
 	cr.ac.store.addConfigForService(svc.GetID(), resolvedConfig)
 	cr.configToService[resolvedConfig.Digest()] = svc.GetID()
+	cr.ac.store.setTagsHashForService(
+		svc.GetID(),
+		tagger.GetEntityHash(docker.ContainerIDToEntityName(string(svc.GetID()))),
+	)
+
 	return resolvedConfig, nil
 }
 
@@ -196,7 +203,7 @@ func (cr *ConfigResolver) processNewService(svc listeners.Service) {
 	cr.m.Lock()
 	defer cr.m.Unlock()
 
-	// in any case, register the service
+	// in any case, register the service and store its tag hash
 	cr.services[svc.GetID()] = svc
 
 	// get all the templates matching service identifiers
@@ -240,6 +247,7 @@ func (cr *ConfigResolver) processDelService(svc listeners.Service) {
 	configs := cr.ac.store.getConfigsForService(svc.GetID())
 	cr.ac.store.removeConfigsForService(svc.GetID())
 	cr.ac.processRemovedConfigs(configs)
+	cr.ac.store.removeTagsHashForService(svc.GetID())
 }
 
 func getHost(tplVar []byte, svc listeners.Service) ([]byte, error) {
