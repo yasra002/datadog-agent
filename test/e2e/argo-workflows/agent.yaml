@@ -345,6 +345,7 @@ spec:
   - name: main
     inputs:
       parameters:
+      - name: cpu-stress
       - name: redis-service
       - name: redis-deployment
       - name: agent-configmap
@@ -366,6 +367,7 @@ spec:
         withItems:
         - "{{inputs.parameters.fake-datadog-deployment}}"
         - "{{inputs.parameters.fake-datadog-service}}"
+
       - name: redis-deployment-setup
         template: manifest
         arguments:
@@ -426,6 +428,7 @@ spec:
 
       - name: find-metrics-cpu-system
         template: find-metrics-cpu-system
+
     - - name: redis-service-setup
         template: manifest
         arguments:
@@ -437,7 +440,7 @@ spec:
         withItems:
         - "{{inputs.parameters.redis-service}}"
 
-      - name: find-metrics-redis-tagged
+    - - name: find-metrics-redis-tagged
         template: find-metrics-redis-tagged
 
     - - name: delete-redis
@@ -598,25 +601,6 @@ spec:
           sleep(2000);
         }
 
-  - name: find-metrics-redis-tagged
-    activeDeadlineSeconds: 200
-    script:
-      image: mongo:3.6.3
-      command: [mongo, "fake-datadog.default.svc.cluster.local/datadog"]
-      source: |
-        while (1) {
-          var nb = db.series.find({
-            metric: {$regex: "redis*"},
-            tags: "kube_service:redis"
-          }).count();
-          print("find: " + nb)
-          if (nb != 0) {
-            break;
-          }
-          sleep(2000);
-        }
-
-
   - name: find-metrics-cpu-docker
     activeDeadlineSeconds: 200
     script:
@@ -640,6 +624,24 @@ spec:
               print("no docker.cpu.usage metric reported")
           }
 
+          sleep(2000);
+        }
+
+  - name: find-metrics-redis-tagged
+    activeDeadlineSeconds: 200
+    script:
+      image: mongo:3.6.3
+      command: [mongo, "fake-datadog.default.svc.cluster.local/datadog"]
+      source: |
+        while (1) {
+          var nb = db.series.find({
+            metric: {$regex: "redis*"},
+            tags: "kube_service:redis"
+          }).count();
+          print("find: " + nb)
+          if (nb != 0) {
+            break;
+          }
           sleep(2000);
         }
 
