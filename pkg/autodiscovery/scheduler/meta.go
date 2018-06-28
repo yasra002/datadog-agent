@@ -12,6 +12,11 @@ import (
 // MetaScheduler is a scheduler dispatching to all registered schedulers
 type MetaScheduler struct{}
 
+// Start inits the meta scheduler
+func (s *MetaScheduler) Start() {
+	// no op
+}
+
 // ScheduleConfigs schedules configs to all registered schedulers
 func (s *MetaScheduler) ScheduleConfigs(configs []integration.Config) {
 	for _, scheduler := range DefaultCatalog {

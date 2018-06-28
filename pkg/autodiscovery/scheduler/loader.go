@@ -27,6 +27,7 @@ func Register(name string, s Scheduler) {
 
 // Scheduler should return an error to report its health
 type Scheduler interface {
+	Start()
 	ScheduleConfigs([]integration.Config)
 	UnscheduleConfigs([]integration.Config)
 	Stop()
