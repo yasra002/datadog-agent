@@ -37,3 +37,13 @@ func (s *MetaScheduler) Stop() {
 		scheduler.Stop()
 	}
 }
+
+// GetScheduler returns a registered scheduler
+func (s *MetaScheduler) GetScheduler(name string) Scheduler {
+	for key, scheduler := range DefaultCatalog {
+		if name == key {
+			return scheduler
+		}
+	}
+	return nil
+}

@@ -18,6 +18,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/listeners"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/providers"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/scheduler"
+	"github.com/DataDog/datadog-agent/pkg/collector"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	"github.com/DataDog/datadog-agent/pkg/secrets"
 	"github.com/DataDog/datadog-agent/pkg/status/health"
@@ -117,10 +118,7 @@ func (ac *AutoConfig) Stop() {
 		ac.pollerActive = false
 	}
 
-	// stop the collector
-	// if ac.collector != nil {
-	// 	ac.collector.Stop()
-	// }
+	// stop the meta scheduler
 	ac.scheduler.Stop()
 
 	// stop the config resolver
@@ -174,14 +172,18 @@ func (ac *AutoConfig) LoadAndRun() {
 // check name
 func (ac *AutoConfig) GetChecksByName(checkName string) []check.Check {
 	// try to also match `FooCheck` if `foo` was passed
-	// titleCheck := fmt.Sprintf("%s%s", strings.Title(checkName), "Check")
+	titleCheck := fmt.Sprintf("%s%s", strings.Title(checkName), "Check")
 	var checks []check.Check
 
-	// for _, c := range ac.getChecksFromConfigs(ac.GetAllConfigs(), false) {
-	// 	if checkName == c.String() || titleCheck == c.String() {
-	// 		checks = append(checks, c)
-	// 	}
-	// }
+	checkScheduler, ok := ac.scheduler.GetScheduler("check").(*collector.CheckScheduler)
+	if !ok {
+		return checks
+	}
+	for _, c := range checkScheduler.GetChecksFromConfigs(ac.GetAllConfigs(), false) {
+		if checkName == c.String() || titleCheck == c.String() {
+			checks = append(checks, c)
+		}
+	}
 	return checks
 }
 
@@ -244,15 +246,6 @@ func isCheckConfig(config integration.Config) bool {
 // schedule takes a slice of checks and schedule them
 func (ac *AutoConfig) schedule(configs []integration.Config) {
 	ac.scheduler.ScheduleConfigs(configs)
-	// for _, c := range checks {
-	// 	log.Infof("Scheduling check %s", c)
-	// 	_, err := ac.collector.RunCheck(c)
-	// 	if err != nil {
-	// 		log.Errorf("Unable to run Check %s: %v", c, err)
-	// 		errorStats.setRunError(c.ID(), err.Error())
-	// 		continue
-	// 	}
-	// }
 }
 
 // resolve loads and resolves a given config into a slice of resolved configs

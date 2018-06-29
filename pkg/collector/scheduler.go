@@ -38,15 +38,9 @@ func NewCheckScheduler(collector *Collector) *CheckScheduler {
 	return scheduler
 }
 
-// Start starts the CheckScheduler
-func (s *CheckScheduler) Start() {
-	// todo?
-}
-
 // ScheduleConfigs schedules configs to checks
 func (s *CheckScheduler) ScheduleConfigs(configs []integration.Config) {
-	// todo
-	checks := s.getChecksFromConfigs(configs, true)
+	checks := s.GetChecksFromConfigs(configs, true)
 	for _, c := range checks {
 		log.Infof("Scheduling check %s", c)
 		_, err := s.collector.RunCheck(c)
@@ -61,7 +55,6 @@ func (s *CheckScheduler) ScheduleConfigs(configs []integration.Config) {
 
 // UnscheduleConfigs unschedules checks matching configs
 func (s *CheckScheduler) UnscheduleConfigs(configs []integration.Config) {
-	// todo
 	// Process removed configs first to handle the case where a
 	// container churn would result in the same configuration hash.
 	for _, config := range configs {
@@ -105,7 +98,9 @@ func (s *CheckScheduler) UnscheduleConfigs(configs []integration.Config) {
 
 // Stop handles clean stop of registered schedulers
 func (s *CheckScheduler) Stop() {
-	// todo
+	if s.collector != nil {
+		s.collector.Stop()
+	}
 }
 
 // AddLoader adds a new Loader that AutoConfig can use to load a check.
@@ -142,9 +137,9 @@ func (s *CheckScheduler) getChecks(config integration.Config) ([]check.Check, er
 	return []check.Check{}, fmt.Errorf("unable to load any check from config '%s'", config.Name)
 }
 
-// getChecksFromConfigs gets all the check instances for given configurations
+// GetChecksFromConfigs gets all the check instances for given configurations
 // optionally can populate ac cache configToChecks
-func (s *CheckScheduler) getChecksFromConfigs(configs []integration.Config, populateCache bool) []check.Check {
+func (s *CheckScheduler) GetChecksFromConfigs(configs []integration.Config, populateCache bool) []check.Check {
 	s.m.Lock()
 	defer s.m.Unlock()
 
