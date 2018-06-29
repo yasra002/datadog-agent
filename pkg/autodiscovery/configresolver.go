@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"unicode"
 
@@ -186,9 +187,14 @@ func (cr *ConfigResolver) resolve(tpl integration.Config, svc listeners.Service)
 	cr.ac.store.setLoadedConfig(resolvedConfig)
 	cr.ac.store.addConfigForService(svc.GetID(), resolvedConfig)
 	cr.configToService[resolvedConfig.Digest()] = svc.GetID()
+	// TODO: harmonize service & entities ID
+	entityName := string(svc.GetID())
+	if !strings.Contains(entityName, "://") {
+		entityName = docker.ContainerIDToEntityName(entityName)
+	}
 	cr.ac.store.setTagsHashForService(
 		svc.GetID(),
-		tagger.GetEntityHash(docker.ContainerIDToEntityName(string(svc.GetID()))),
+		tagger.GetEntityHash(entityName),
 	)
 
 	return resolvedConfig, nil
