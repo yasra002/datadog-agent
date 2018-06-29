@@ -8,10 +8,12 @@
 package kubelet
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/util/docker"
 	"github.com/DataDog/datadog-agent/pkg/util/ec2"
@@ -59,7 +61,9 @@ func getIPAddressesFromHostname(hostname string) ([]string, error) {
 	}
 
 	log.Debug("Trying to resolve the hostname provided %q")
-	ips, err := net.LookupIP(hostname)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	ips, err := net.DefaultResolver.LookupIPAddr(ctx, hostname)
 	if err != nil {
 		log.Debugf("Cannot LookupIP hostname %s: %v", hostname, err)
 		return nil, err
@@ -152,6 +156,6 @@ func getKubeletPotentialHosts() []string {
 	}
 
 	potentialKubeletHosts = potentialKubeletHostsFilter(potentialKubeletHosts)
-	log.Debugf("Potential kubelet detected hosts are: %s", strings.Join(potentialKubeletHosts, ", "))
+	log.Infof("Potential kubelet detected hosts are: %s", strings.Join(potentialKubeletHosts, ", "))
 	return potentialKubeletHosts
 }
