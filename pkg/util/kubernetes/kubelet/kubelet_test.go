@@ -147,12 +147,14 @@ type KubeletTestSuite struct {
 // Make sure globalKubeUtil is deleted before each test
 func (suite *KubeletTestSuite) SetupTest() {
 	ResetGlobalKubeUtil()
+	ResetCache()
 
 	config.Datadog.Set("kubelet_client_crt", "")
 	config.Datadog.Set("kubelet_client_key", "")
 	config.Datadog.Set("kubelet_client_ca", "")
 	config.Datadog.Set("kubelet_tls_verify", true)
 	config.Datadog.Set("kubelet_auth_token_path", "")
+	config.Datadog.Set("kubernetes_kubelet_host_autodetect", false)
 
 	config.Datadog.Set("kubernetes_kubelet_host", "")
 	config.Datadog.Set("kubernetes_http_kubelet_port", 10250)
@@ -229,7 +231,7 @@ func (suite *KubeletTestSuite) TestGetNodeInfo() {
 	defer ts.Close()
 	require.Nil(suite.T(), err)
 
-	config.Datadog.Set("kubernetes_kubelet_host", "localhost")
+	config.Datadog.Set("kubernetes_kubelet_host", "127.0.0.1")
 	config.Datadog.Set("kubernetes_http_kubelet_port", kubeletPort)
 	config.Datadog.Set("kubelet_tls_verify", false)
 	config.Datadog.Set("kubelet_auth_token_path", "")
@@ -260,7 +262,7 @@ func (suite *KubeletTestSuite) TestGetHostname() {
 	defer ts.Close()
 	require.Nil(suite.T(), err)
 
-	config.Datadog.Set("kubernetes_kubelet_host", "localhost")
+	config.Datadog.Set("kubernetes_kubelet_host", "127.0.0.1")
 	config.Datadog.Set("kubernetes_http_kubelet_port", kubeletPort)
 	config.Datadog.Set("kubelet_tls_verify", false)
 	config.Datadog.Set("kubelet_auth_token_path", "")
@@ -290,7 +292,7 @@ func (suite *KubeletTestSuite) TestHostnameProvider() {
 	defer ts.Close()
 	require.Nil(suite.T(), err)
 
-	config.Datadog.Set("kubernetes_kubelet_host", "localhost")
+	config.Datadog.Set("kubernetes_kubelet_host", "127.0.0.1")
 	config.Datadog.Set("kubernetes_http_kubelet_port", kubeletPort)
 	config.Datadog.Set("kubelet_tls_verify", false)
 	config.Datadog.Set("kubelet_auth_token_path", "")
@@ -316,7 +318,7 @@ func (suite *KubeletTestSuite) TestPodlistCache() {
 	defer ts.Close()
 	require.Nil(suite.T(), err)
 
-	config.Datadog.Set("kubernetes_kubelet_host", "localhost")
+	config.Datadog.Set("kubernetes_kubelet_host", "127.0.0.1")
 	config.Datadog.Set("kubernetes_http_kubelet_port", kubeletPort)
 
 	kubeutil, err := GetKubeUtil()
@@ -354,7 +356,7 @@ func (suite *KubeletTestSuite) TestGetPodForContainerID() {
 	defer ts.Close()
 	require.Nil(suite.T(), err)
 
-	config.Datadog.Set("kubernetes_kubelet_host", "localhost")
+	config.Datadog.Set("kubernetes_kubelet_host", "127.0.0.1")
 	config.Datadog.Set("kubernetes_http_kubelet_port", kubeletPort)
 
 	kubeutil, err := GetKubeUtil()

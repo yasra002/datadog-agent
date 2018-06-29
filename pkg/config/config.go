@@ -198,6 +198,8 @@ func init() {
 	Datadog.SetDefault("kubelet_client_crt", "")
 	Datadog.SetDefault("kubelet_client_key", "")
 
+	Datadog.SetDefault("kubernetes_kubelet_host_autodetect", true)
+
 	Datadog.SetDefault("kubernetes_collect_metadata_tags", true)
 	Datadog.SetDefault("kubernetes_metadata_tag_update_freq", 60*5) // 5 min
 
