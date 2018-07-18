@@ -13,14 +13,14 @@ import (
 	"os/exec"
 	"sync"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/DataDog/datadog-agent/pkg/metadata/externalhost"
 
-	"github.com/DataDog/datadog-agent/pkg/util/log"
-
 	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/version"
 )
 
@@ -162,6 +162,10 @@ func GetSubprocessOutput(argv **C.char, argc, raise int) *C.PyObject {
 		subprocessArgs[i-1] = C.GoString(cmdSlice[i])
 	}
 	cmd := exec.Command(subprocessCmd, subprocessArgs...)
+
+	cmdKey := fmt.Sprintf("%s-%v", cmd, time.Now().UnixNano())
+	runningProcesses.Add(cmdKey, cmd)
+	defer runningProcesses.Remove(cmdKey)
 
 	glock := C.PyGILState_Ensure()
 	defer C.PyGILState_Release(glock)
