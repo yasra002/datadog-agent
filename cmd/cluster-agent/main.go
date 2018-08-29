@@ -18,6 +18,7 @@ import (
 	_ "expvar"
 
 	_ "github.com/DataDog/datadog-agent/pkg/collector/corechecks/cluster"
+	_ "github.com/DataDog/datadog-agent/pkg/collector/corechecks/containers"
 	_ "github.com/DataDog/datadog-agent/pkg/collector/corechecks/network"
 	_ "github.com/DataDog/datadog-agent/pkg/collector/corechecks/system"
 	"github.com/DataDog/datadog-agent/pkg/config"
