@@ -7,6 +7,7 @@ import shutil
 import sys
 import os
 import re
+import signal
 
 from invoke import task
 from invoke.exceptions import Exit
@@ -101,6 +102,79 @@ COPY test.bin /test.bin
         test_container.remove(v=True, force=True)
         scratch_volume.remove(force=True)
         client.images.remove(test_image.id)
+
+    if exit_code != 0:
+        raise Exit(code=exit_code)
+
+
+@task
+def dockerize_omnibus(ctx, skip_cleanup=False, cache_folder="/tmp/omni-build"):
+    """
+    Run omnibus in a docker environment and pipe its output to stdout.
+    """
+    import docker
+    temp_folder = None
+    build_image = None
+    build_container = None
+
+    def cleanup():
+        if skip_cleanup:
+            return
+        if build_container:
+            build_container.remove(v=True, force=True)
+        if build_image:
+            client.images.remove(build_image.id)
+        if temp_folder:
+            shutil.rmtree(temp_folder)
+
+    def signal_handler(sig, frame):
+        cleanup()
+    signal.signal(signal.SIGINT, signal_handler)
+
+    client = docker.from_env()
+    temp_folder = tempfile.mkdtemp(prefix="ddtest-")
+
+    with open("%s/run.sh" % temp_folder, 'w') as stream:
+        stream.write("""#!/bin/bash
+ls $STATE_DIR/venv/bin/activate || virtualenv $STATE_DIR/venv
+. $STATE_DIR/venv/bin/activate
+pip install -r requirements.txt
+
+mkdir -p /tmp/omni-build/bundler
+ln -s /tmp/omni-build/bundler /usr/local/bundle/bundler
+
+rm -rf /tmp/omni-build/omnibus/src/datadog-agent/src/github.com/DataDog/datadog-agent
+invoke -e agent.omnibus-build --skip-sign --skip-deps --base-dir=$STATE_DIR/omnibus
+""")
+
+    with open("%s/Dockerfile" % temp_folder, 'w') as stream:
+        stream.write("""FROM datadog/datadog-agent-runner-circle:latest
+ENV STATE_DIR="/tmp/omni-build"
+
+ADD run.sh /
+RUN chmod +x /run.sh \
+ && git config --global user.email "omnibus@datadoghq.com" \
+ && git config --global user.name "Omnibus builder"
+
+WORKDIR /go/src/github.com/DataDog/datadog-agent/
+CMD /run.sh
+""")
+
+    build_image, _ = client.images.build(path=temp_folder, rm=True)
+    build_container = client.containers.run(
+        build_image.id,
+        detach=True,
+        environment=[],
+        volumes={
+            os.getcwd(): {'bind': '/go/src/github.com/DataDog/datadog-agent', 'mode': 'rw'},
+            cache_folder: {'bind': '/tmp/omni-build', 'mode': 'rw'},
+        })
+
+    for line in build_container.logs(stdout=True, stderr=True, stream=True, follow=True):
+        sys.stdout.write(line)
+    exit_code = build_container.wait()['StatusCode']
+
+    cleanup()
 
     if exit_code != 0:
         raise Exit(code=exit_code)

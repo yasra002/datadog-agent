@@ -120,21 +120,22 @@ if windows?
   dependency 'pywin32'
 end
 
-# Datadog agent
-dependency 'datadog-agent'
-
-# Additional software
-dependency 'datadog-pip'
-dependency 'datadog-agent-integrations'
-dependency 'jmxfetch'
-
 # External agents
 dependency 'datadog-trace-agent'
 dependency 'datadog-process-agent'
 
+# Additional software
+dependency 'jmxfetch'
+dependency 'datadog-pip'
+dependency 'datadog-agent-integrations'
+
+
 if osx?
   dependency 'datadog-agent-mac-app'
 end
+
+# Datadog agent
+dependency 'datadog-agent'
 
 # Remove pyc/pyo files from package
 # should be built after all the other python-related software defs
