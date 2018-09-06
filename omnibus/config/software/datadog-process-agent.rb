@@ -30,7 +30,7 @@ build do
     command "chmod +x #{binary}"
     command "mv #{binary} #{install_dir}/embedded/bin/#{target_binary}"
 
-	# network-tracer versions will always be the same on both process-agent and network-tracer
+    # network-tracer versions will always be the same on both process-agent and network-tracer
     binary = "network-tracer-amd64-#{version}"
     target_binary = "network-tracer"
     curl_cmd = "curl -f #{url} -o #{binary}"

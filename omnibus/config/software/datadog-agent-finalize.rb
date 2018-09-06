@@ -47,6 +47,7 @@ build do
             move "#{install_dir}/scripts/datadog-agent.conf", "/etc/init"
             move "#{install_dir}/scripts/datadog-agent-trace.conf", "/etc/init"
             move "#{install_dir}/scripts/datadog-agent-process.conf", "/etc/init"
+            move "#{install_dir}/scripts/datadog-agent-network.conf", "/etc/init"
             systemd_directory = "/usr/lib/systemd/system"
             if debian?
                 # debian recommends using a different directory for systemd unit files
@@ -56,6 +57,7 @@ build do
             move "#{install_dir}/scripts/datadog-agent.service", systemd_directory
             move "#{install_dir}/scripts/datadog-agent-trace.service", systemd_directory
             move "#{install_dir}/scripts/datadog-agent-process.service", systemd_directory
+            move "#{install_dir}/scripts/datadog-agent-network.service", systemd_directory
 
             # Move checks and configuration files
             mkdir "/etc/datadog-agent"

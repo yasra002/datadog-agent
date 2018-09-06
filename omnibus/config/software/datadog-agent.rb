@@ -75,6 +75,10 @@ build do
           dest: "#{install_dir}/scripts/datadog-agent-process.conf",
           mode: 0644,
           vars: { install_dir: install_dir, etc_dir: etc_dir }
+      erb source: "upstart_debian.network.conf.erb",
+          dest: "#{install_dir}/scripts/datadog-agent-network.conf",
+          mode: 0644,
+          vars: { install_dir: install_dir, etc_dir: etc_dir }
       erb source: "upstart_debian.trace.conf.erb",
           dest: "#{install_dir}/scripts/datadog-agent-trace.conf",
           mode: 0644,
@@ -90,6 +94,10 @@ build do
           dest: "#{install_dir}/scripts/datadog-agent-process.conf",
           mode: 0644,
           vars: { install_dir: install_dir, etc_dir: etc_dir }
+      erb source: "upstart_redhat.network.conf.erb",
+          dest: "#{install_dir}/scripts/datadog-agent-network.conf",
+          mode: 0644,
+          vars: { install_dir: install_dir, etc_dir: etc_dir }
       erb source: "upstart_redhat.trace.conf.erb",
           dest: "#{install_dir}/scripts/datadog-agent-trace.conf",
           mode: 0644,
@@ -102,6 +110,10 @@ build do
         vars: { install_dir: install_dir, etc_dir: etc_dir }
     erb source: "systemd.process.service.erb",
         dest: "#{install_dir}/scripts/datadog-agent-process.service",
+        mode: 0644,
+        vars: { install_dir: install_dir, etc_dir: etc_dir }
+    erb source: "systemd.network.service.erb",
+        dest: "#{install_dir}/scripts/datadog-agent-network.service",
         mode: 0644,
         vars: { install_dir: install_dir, etc_dir: etc_dir }
     erb source: "systemd.trace.service.erb",
