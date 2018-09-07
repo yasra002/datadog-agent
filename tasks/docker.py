@@ -108,7 +108,7 @@ COPY test.bin /test.bin
 
 
 @task
-def dockerize_omnibus(ctx, skip_cleanup=False, cache_folder="/tmp/omni-build"):
+def dockerize_omnibus(ctx, skip_cleanup=False, clear_cache=False, cache_folder="~/.omni-build"):
     """
     Run omnibus in a docker environment and pipe its output to stdout.
     """
@@ -116,6 +116,11 @@ def dockerize_omnibus(ctx, skip_cleanup=False, cache_folder="/tmp/omni-build"):
     temp_folder = None
     build_image = None
     build_container = None
+
+    cache_folder = os.path.expanduser(cache_folder)
+
+    if clear_cache and os.path.exists(cache_folder):
+        shutil.rmtree(temp_folder)
 
     def cleanup():
         if skip_cleanup:
@@ -140,11 +145,12 @@ ls $STATE_DIR/venv/bin/activate || virtualenv $STATE_DIR/venv
 . $STATE_DIR/venv/bin/activate
 pip install -r requirements.txt
 
-mkdir -p /tmp/omni-build/bundler
-ln -s /tmp/omni-build/bundler /usr/local/bundle/bundler
+rm -rf $STATE_DIR/omnibus/src/datadog-agent/src/github.com/DataDog/datadog-agent
 
-rm -rf /tmp/omni-build/omnibus/src/datadog-agent/src/github.com/DataDog/datadog-agent
-invoke -e agent.omnibus-build --skip-sign --skip-deps --base-dir=$STATE_DIR/omnibus
+invoke -e agent.omnibus-build \
+  --skip-sign --skip-deps \
+  --base-dir=$STATE_DIR/omnibus \
+  --gem-path=$STATE_DIR/gems
 """)
 
     with open("%s/Dockerfile" % temp_folder, 'w') as stream:
