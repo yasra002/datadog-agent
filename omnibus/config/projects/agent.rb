@@ -127,8 +127,7 @@ dependency 'datadog-process-agent'
 # Additional software
 dependency 'jmxfetch'
 dependency 'datadog-pip'
-dependency 'datadog-agent-integrations'
-
+dependency 'protobuf-py'
 
 if osx?
   dependency 'datadog-agent-mac-app'
@@ -136,6 +135,8 @@ end
 
 # Datadog agent
 dependency 'datadog-agent'
+
+dependency 'datadog-agent-integrations'
 
 # Remove pyc/pyo files from package
 # should be built after all the other python-related software defs
