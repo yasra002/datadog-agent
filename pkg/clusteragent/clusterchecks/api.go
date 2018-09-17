@@ -14,10 +14,12 @@ import (
 // TODO: handle non-leader / warmup phases, handler methods will
 // become more complex at that stage
 
-// ShouldRedirect returns the leader's hostname if the cluster-agent
+// ShouldRedirect returns the leader's IP if the cluster-agent
 // is currently a follower, or an empty string if we should handle the query
 func (h *Handler) ShouldRedirect() string {
-	return ""
+	h.RLock()
+	defer h.RUnlock()
+	return h.leaderIP
 }
 
 // GetAllConfigs returns all configurations known to the store, for reporting

@@ -199,6 +199,27 @@ func (le *LeaderEngine) GetLeader() string {
 	return le.leaderIdentity
 }
 
+// GetLeaderIP returns the IP the leader can be reached at, assuming its
+// identity is either the pod name or the node name. Returns empty if we
+// are the leader. The result is not cached.
+func (le *LeaderEngine) GetLeaderIP() (string, error) {
+	leaderName := le.GetLeader()
+	if leaderName == "" || leaderName == le.HolderIdentity {
+		return "", nil
+	}
+
+	serviceName := config.Datadog.GetString("cluster_agent.kubernetes_service_name")
+	endpointList, err := le.coreClient.Endpoints(le.LeaderNamespace).Get(serviceName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	target, err := apiserver.SearchTargetPerName(endpointList, leaderName)
+	if err != nil {
+		return "", err
+	}
+	return target.IP, nil
+}
+
 // IsLeader returns true if the last observed leader was this client else returns false.
 func (le *LeaderEngine) IsLeader() bool {
 	return le.GetLeader() == le.HolderIdentity
