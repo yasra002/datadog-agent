@@ -1,7 +1,6 @@
 [Unit]
 Description="Datadog Network Tracer"
-After=network.target datadog-agent.service
-BindsTo=datadog-agent.service
+After=network.target
 StartLimitIntervalSec=10
 StartLimitBurst=5
 
