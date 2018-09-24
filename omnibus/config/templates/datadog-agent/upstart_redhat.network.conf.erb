@@ -13,7 +13,7 @@ script
   # Logging to console from the agent is disabled since the agent already logs using file or
   # syslog depending on its configuration. We then redirect the stdout/stderr of the agent process
   # to log panic/crashes.
-  exec <%= install_dir %>/embedded/bin/network-tracer --config=<%= etc_dir %>/datadog.yaml --pid=<%= install_dir %>/run/network-tracer.pid &>> /var/log/datadog/network-tracer-errors.log
+  exec <%= install_dir %>/embedded/bin/network-tracer --config=<%= etc_dir %>/network-tracer.yaml --pid=<%= install_dir %>/run/network-tracer.pid &>> /var/log/datadog/network-tracer-errors.log
 end script
 
 pre-start script

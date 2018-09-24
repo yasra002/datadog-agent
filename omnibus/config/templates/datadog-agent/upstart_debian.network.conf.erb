@@ -14,7 +14,7 @@ console log
 env DD_LOG_TO_CONSOLE=false
 
 script
-  exec <%= install_dir %>/embedded/bin/network-tracer --config=<%= etc_dir %>/datadog.yaml --pid=<%= install_dir %>/run/network-tracer.pid
+  exec <%= install_dir %>/embedded/bin/network-tracer --config=<%= etc_dir %>/network-tracer.yaml --pid=<%= install_dir %>/run/network-tracer.pid
 end script
 
 post-stop script
