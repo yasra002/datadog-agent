@@ -63,6 +63,7 @@ build do
             mkdir "/etc/datadog-agent"
             move "#{install_dir}/bin/agent/dd-agent", "/usr/bin/dd-agent"
             move "#{install_dir}/etc/datadog-agent/datadog.yaml.example", "/etc/datadog-agent"
+            move "#{install_dir}/etc/datadog-agent/network-tracer.yaml.example", "/etc/datadog-agent"
             delete "#{install_dir}/etc/datadog-agent/trace-agent.conf.example"
             move "#{install_dir}/etc/datadog-agent/conf.d", "/etc/datadog-agent", :force=>true
 
@@ -87,6 +88,7 @@ build do
             delete "#{install_dir}/etc/conf.d/winproc.d"
 
             delete "#{install_dir}/etc/trace-agent.conf.example"
+            delete "#{install_dir}/etc/network-tracer.yaml.example"
 
             # Nothing to move on osx, the confs already live in /opt/datadog-agent/etc/
         end
