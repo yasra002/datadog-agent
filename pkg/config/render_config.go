@@ -61,7 +61,7 @@ func mkContext(buildType string) context {
 		}
 	case "network-tracer":
 		return context{
-			NetworkTracer:     true,
+			NetworkTracer: true,
 		}
 	case "dogstatsd":
 		return context{
