@@ -8,6 +8,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -109,6 +110,9 @@ func start(cmd *cobra.Command, args []string) error {
 		logFile = ""
 	}
 
+	mainCtx, mainCtxCancel := context.WithCancel(context.Background())
+	defer mainCtxCancel() // Calling cancel twice is safe
+
 	err = config.SetupLogger(
 		config.Datadog.GetString("log_level"),
 		logFile,
@@ -177,7 +181,7 @@ func start(cmd *cobra.Command, args []string) error {
 	common.StartAutoConfig()
 
 	// Start the cluster-check discovery if configured
-	clusterCheckHandler := setupClusterCheck()
+	clusterCheckHandler := setupClusterCheck(mainCtx)
 	// start the cmd HTTPS server
 	sc := clusteragent.ServerContext{
 		ClusterCheckHandler: clusterCheckHandler,
@@ -197,9 +201,10 @@ func start(cmd *cobra.Command, args []string) error {
 
 	// Block here until we receive the interrupt signal
 	<-signalCh
-	if clusterCheckHandler != nil {
-		clusterCheckHandler.StopDiscovery()
-	}
+
+	// Cancel the main context to stop components
+	mainCtxCancel()
+
 	if config.Datadog.GetBool("external_metrics_provider.enabled") {
 		custommetrics.StopServer()
 	}
@@ -211,23 +216,19 @@ func start(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func setupClusterCheck() *clusterchecks.Handler {
+func setupClusterCheck(ctx context.Context) *clusterchecks.Handler {
 	if !config.Datadog.GetBool("cluster_checks.enabled") {
 		log.Debug("Cluster check Autodiscovery disabled")
 		return nil
 	}
 
-	clusterCheckHandler, err := clusterchecks.SetupHandler(common.AC)
+	handler, err := clusterchecks.SetupHandler(common.AC)
 	if err != nil {
 		log.Errorf("Could not setup the cluster-checks Autodiscovery: %s", err.Error())
 		return nil
 	}
-	err = clusterCheckHandler.StartDiscovery()
-	if err != nil {
-		log.Errorf("Could not start the cluster-checks Autodiscovery: %s", err.Error())
-		return nil
-	}
+	go handler.Run(ctx)
 
 	log.Info("Started cluster check Autodiscovery")
-	return clusterCheckHandler
+	return handler
 }
