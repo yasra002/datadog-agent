@@ -26,8 +26,8 @@ func IsAbleToScale(hpa *autoscalingv2.HorizontalPodAutoscaler) bool {
 	return false
 }
 
-// Inspect returns the list of external metrics from the hpa to use for autoscaling.
-func Inspect(hpa *autoscalingv2.HorizontalPodAutoscaler) (emList []custommetrics.ExternalMetricValue) {
+// GetExternalMetrics returns the list of external metrics from the hpa to use for autoscaling.
+func GetExternalMetrics(hpa *autoscalingv2.HorizontalPodAutoscaler) (emList []custommetrics.ExternalMetricValue) {
 	for _, metricSpec := range hpa.Spec.Metrics {
 		switch metricSpec.Type {
 		case autoscalingv2.ExternalMetricSourceType:
