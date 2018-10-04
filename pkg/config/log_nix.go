@@ -7,6 +7,24 @@
 
 package config
 
+import (
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+)
+
+func init() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGPIPE)
+
+	go func() {
+		for s := range c {
+			fmt.Println("Got Signal:", s)
+		}
+	}()
+}
+
 // GetSyslogURI returns the configured/default syslog uri
 func GetSyslogURI() string {
 	enabled := Datadog.GetBool("log_to_syslog")
