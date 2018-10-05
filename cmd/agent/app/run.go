@@ -33,6 +33,7 @@ var (
 	// flags variables
 	runForeground bool
 	pidfilePath   string
+	ignoreSigpipe bool
 )
 
 // run the host metadata collector every 14400 seconds (4 hours)
@@ -51,6 +52,8 @@ func init() {
 
 	// local flags
 	runCmd.Flags().StringVarP(&pidfilePath, "pidfile", "p", "", "path to the pidfile")
+	// To use when running with systemd
+	runCmd.Flags().BoolVarP(&ignoreSigpipe, "ignore-sigpipe", "i", false, "Whether SIGPIPE signals should be ignored or not")
 }
 
 // Start the main loop
@@ -80,6 +83,19 @@ func run(cmd *cobra.Command, args []string) error {
 			stopCh <- nil
 		}
 	}()
+
+	// By default systemd redirect the stdout to journald. When journald is stopped or crashes we receive a SIGPIPE signal.
+	// Go ignore SIGPIPE signals unless it is when stdout or stdout is closed, in this case the agent is stopped. We don't want that
+	// so we intercept the SIGPIPE signals and just discard them.
+	if ignoreSigpipe {
+		sigpipeCh := make(chan os.Signal, 1)
+		signal.Notify(sigpipeCh, syscall.SIGPIPE)
+		go func() {
+			for range sigpipeCh {
+				// do nothing
+			}
+		}()
+	}
 
 	if err := StartAgent(); err != nil {
 		return err
